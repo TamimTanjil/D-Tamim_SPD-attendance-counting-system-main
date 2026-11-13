@@ -66,13 +66,28 @@ export interface DashboardStats {
 }
 
 function getLocalDate(): string {
-  const date = new Date();
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
 
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const year = parts.find(p => p.type === "year")!.value;
+  const month = parts.find(p => p.type === "month")!.value;
+  const day = parts.find(p => p.type === "day")!.value;
 
   return `${year}-${month}-${day}`;
+}
+
+function getLocalTime(): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Dhaka",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date());
 }
 
 function normalizeStatus(status: unknown): AttendanceStatus {
@@ -304,11 +319,13 @@ export async function checkInByBadge(
   const { data, error } = await supabase
     .from("attendance")
     .insert({
-      student_id: student.student_id,
-      student_name: student.name,
-      status: "Present",
-      method: "QR",
-    })
+  student_id: student.student_id,
+  student_name: student.name,
+  attendance_date: getLocalDate(),
+  attendance_time: getLocalTime(),
+  status: "Present",
+  method: "QR",
+})
     .select()
     .single();
 
